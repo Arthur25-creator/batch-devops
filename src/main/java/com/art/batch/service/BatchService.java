@@ -1,9 +1,8 @@
 package com.art.batch.service;
 
-import java.nio.file.Paths;
-
 import org.springframework.stereotype.Service;
 
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -22,15 +21,13 @@ public class BatchService {
 		this(S3Client.builder().build());
 	}
 
-	public void processTask(String message) {
-		// Example processing
-		String output = "Processed: " + message;
+	public String processTask(String taskId) {
+		String output = "Processed task: " + taskId;
+		String key = "output-" + taskId + ".txt";
 
-		// Save to S3
-		String key = "output-" + System.currentTimeMillis() + ".txt";
-		s3Client.putObject(PutObjectRequest.builder().bucket(bucketName).key(key).build(), Paths.get("/tmp/" + key)); // write
-																														// locally
-																														// then
-																														// upload
+		s3Client.putObject(PutObjectRequest.builder().bucket(bucketName).key(key).build(),
+				RequestBody.fromString(output));
+
+		return key; // return S3 key
 	}
 }

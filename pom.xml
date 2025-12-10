@@ -61,6 +61,18 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-batch</artifactId>
 		</dependency>
+		
+		<dependency>
+		    <groupId>software.amazon.awssdk</groupId>
+		    <artifactId>dynamodb-enhanced</artifactId>
+		    <version>2.25.62</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>software.amazon.awssdk</groupId>
+		    <artifactId>dynamodb</artifactId>
+		    <version>2.25.62</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

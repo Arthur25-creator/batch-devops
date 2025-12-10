@@ -4,26 +4,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 
+import com.art.batch.repository.TaskRepository;
 import com.art.batch.service.BatchService;
 
 public class WorkerLambdaHandlerTest {
 
 	@Test
-	public void testWorkerLambdaProcess() {
-		// Mock BatchService
+	public void testWorkerLambda() {
+
 		BatchService mockService = mock(BatchService.class);
+		TaskRepository mockRepo = mock(TaskRepository.class);
 
-		// Inject mock into handler
-		WorkerLambdaHandler handler = new WorkerLambdaHandler(mockService);
+		when(mockService.processTask("123")).thenReturn("output-123.txt");
 
-		// Invoke handler
-		String result = handler.handleRequest("Hello", null);
+		WorkerLambdaHandler handler = new WorkerLambdaHandler(mockService, mockRepo);
 
-		// Verify
-		verify(mockService, times(1)).processTask("Hello");
-		assertEquals("Processed and stored successfully!", result);
+		String result = handler.handleRequest("123", null);
+
+		verify(mockRepo, times(1)).updateStatus("123", "DONE", "output-123.txt");
+		assertEquals("Processed: 123", result);
 	}
 }

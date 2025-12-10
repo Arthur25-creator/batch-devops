@@ -1,36 +1,51 @@
 package com.art.batch.controller;
 
 import java.util.Map;
+import java.util.UUID;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.art.batch.model.TaskRecord;
+import com.art.batch.repository.TaskRepository;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 public class ApiLambdaHandler implements RequestHandler<Map<String, String>, String> {
 
-	private final SqsClient sqsClient;
+	private final SqsClient sqs;
+	private final TaskRepository taskRepository;
 	private final String queueUrl;
 
-	// Default constructor used by real Lambda
+	// Runtime constructor
 	public ApiLambdaHandler() {
-		this.sqsClient = SqsClient.builder().build(); // real client only in AWS
+		this.sqs = SqsClient.builder().build();
+		this.taskRepository = new TaskRepository();
 		this.queueUrl = System.getenv("QUEUE_URL");
 	}
 
-	// Constructor for unit tests (MOCKS)
-	public ApiLambdaHandler(SqsClient sqsClient, String queueUrl) {
-		this.sqsClient = sqsClient;
+	// Test constructor
+	public ApiLambdaHandler(SqsClient sqs, TaskRepository repo, String queueUrl) {
+		this.sqs = sqs;
+		this.taskRepository = repo;
 		this.queueUrl = queueUrl;
 	}
 
 	@Override
 	public String handleRequest(Map<String, String> event, Context context) {
-		String message = event.get("data");
+		String input = event.get("data");
+		String taskId = UUID.randomUUID().toString();
 
-		sqsClient.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(message).build());
+		TaskRecord task = new TaskRecord();
+		task.setTaskId(taskId);
+		task.setInput(input);
+		task.setStatus("QUEUED");
+		task.setCreatedAt(System.currentTimeMillis());
 
-		return "Message queued successfully!";
+		taskRepository.createTask(task);
+
+		sqs.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(taskId).build());
+
+		return taskId;
 	}
 }
