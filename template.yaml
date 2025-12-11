@@ -33,7 +33,7 @@ Resources:
     Properties:
       FunctionName: ApiLambdaFunction
       Handler: com.art.batch.controller.ApiLambdaHandler::handleRequest
-      CodeUri: target/application.jar
+      CodeUri: .
       Environment:
         Variables:
           QUEUE_URL: !Ref TaskQueue
@@ -52,7 +52,7 @@ Resources:
     Properties:
       FunctionName: WorkerLambdaFunction
       Handler: com.art.batch.controller.WorkerLambdaHandler::handleRequest
-      CodeUri: target/application.jar
+      CodeUri: .
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref OutputBucketName

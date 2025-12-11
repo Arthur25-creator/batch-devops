@@ -11,7 +11,6 @@ phases:
   build:
     commands:
       - echo "Building Java project..."
-      - mvn clean package
       - echo "Building SAM package..."
       - sam build --use-container
 
