@@ -2,12 +2,24 @@ version: 0.2
 
 phases:
   install:
+    runtime-versions:
+      java: corretto17
     commands:
       - echo Installing Maven...
+      - mvn -version
+
   build:
     commands:
+      - echo "Building Java project..."
       - mvn clean package
+      - echo "Building SAM package..."
+      - sam build --use-container
 
 artifacts:
   files:
-    - target/*.jar
+    - .aws-sam/build/**/*
+
+cache:
+  paths:
+    - ~/.m2/**/* 
+

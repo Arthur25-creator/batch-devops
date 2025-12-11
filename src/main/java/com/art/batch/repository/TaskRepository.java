@@ -18,11 +18,14 @@ public class TaskRepository {
 
 	// Runtime constructor
 	public TaskRepository() {
-		DynamoDbClient client = DynamoDbClient.builder().region(Region.AP_SOUTHEAST_1).build();
+		String tableName = System.getenv("TASK_TABLE");
+		String regionName = System.getenv("AWS_REGION"); // Lambda automatically sets this
+
+		DynamoDbClient client = DynamoDbClient.builder().region(Region.of(regionName)).build();
 
 		DynamoDbEnhancedClient enhanced = DynamoDbEnhancedClient.builder().dynamoDbClient(client).build();
 
-		this.table = enhanced.table("TasksTable", TableSchema.fromBean(TaskRecord.class));
+		this.table = enhanced.table(tableName, TableSchema.fromBean(TaskRecord.class));
 	}
 
 	// Test constructor (mock incoming)

@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Task Processing Pipeline (API → SQS → Worker → S3/DynamoDB)
+
+Globals:
+  Function:
+    Runtime: java17
+    MemorySize: 1024
+    Timeout: 30
+    Architectures:
+      - x86_64
+
+Parameters:
+  OutputBucketName:
+    Type: String
+    Description: Name of the existing S3 bucket for output files
+
+Resources:
+
+  # --------------------------------------
+  #  SQS QUEUE
+  # --------------------------------------
+  TaskQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: TaskQueue
+
+  # --------------------------------------
+  #  API LAMBDA FUNCTION
+  # --------------------------------------
+  ApiLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ApiLambdaFunction
+      Handler: com.art.batch.controller.ApiLambdaHandler::handleRequest
+      CodeUri: target/application.jar
+      Environment:
+        Variables:
+          QUEUE_URL: !Ref TaskQueue
+          TASK_TABLE: "TasksTable"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: TasksTable
+        - SQSSendMessagePolicy:
+            QueueName: TaskQueue
+
+  # --------------------------------------
+  #  WORKER LAMBDA FUNCTION
+  # --------------------------------------
+  WorkerLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: WorkerLambdaFunction
+      Handler: com.art.batch.controller.WorkerLambdaHandler::handleRequest
+      CodeUri: target/application.jar
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref OutputBucketName
+          TASK_TABLE: "TasksTable"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: TasksTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub "arn:aws:s3:::${OutputBucketName}/*"
+
+      Events:
+        TaskQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt TaskQueue.Arn
+            BatchSize: 1
+
+Outputs:
+  ApiLambdaArn:
+    Value: !GetAtt ApiLambdaFunction.Arn
+    Description: ARN of the API Lambda function
+
+  WorkerLambdaArn:
+    Value: !GetAtt WorkerLambdaFunction.Arn
+    Description: ARN of the Worker Lambda function
+
+  QueueUrl:
+    Value: !Ref TaskQueue
+    Description: SQS queue URL
+
+  QueueArn:
+    Value: !GetAtt TaskQueue.Arn
+    Description: SQS queue ARN
