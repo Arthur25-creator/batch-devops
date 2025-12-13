@@ -36,7 +36,30 @@ Resources:
   TaskQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: TaskQueue
+      QueueName: !Sub "${AWS::StackName}-TaskQueue"  # Make it unique like your bucket
+      VisibilityTimeoutSeconds: 300                  # Adjust based on processing time
+      MessageRetentionPeriod: 1209600               # 14 days (default)
+      RedrivePolicy:                                # Dead letter queue for failed messages
+        deadLetterTargetArn: !GetAtt TaskDLQ.Arn
+        maxReceiveCount: 3
+
+  TaskDLQ:  # Dead Letter Queue for failed messages
+     Type: AWS::SQS::Queue
+     Properties:
+       QueueName: !Sub "${AWS::StackName}-TaskQueue-DLQ"
+	   
+#  TasksTable:
+#    Type: AWS::DynamoDB::Table
+#    Properties:
+#      TableName: !Sub "${AWS::StackName}-TasksTable"
+#      BillingMode: PAY_PER_REQUEST    # Or PROVISIONED with ReadCapacityUnits/WriteCapacityUnits
+#      AttributeDefinitions:
+#        - AttributeName: taskId
+#          AttributeType: S
+#      KeySchema:
+#        - AttributeName: taskId
+#        KeyType: HASH
+
 
   # --------------------------------------
   #  API LAMBDA FUNCTION
@@ -44,18 +67,34 @@ Resources:
   ApiLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ApiLambdaFunction
+      FunctionName: !Sub "${AWS::StackName}-ApiLambdaFunction"  # Make it unique
       Handler: com.art.batch.controller.ApiLambdaHandler::handleRequest
+      Runtime: java17                    # ✅ Added required runtime
       CodeUri: .
+      Timeout: 30                       # ✅ Add timeout (default is 3 seconds)
+      MemorySize: 512                   # ✅ Add memory size
       Environment:
         Variables:
           QUEUE_URL: !Ref TaskQueue
-          TASK_TABLE: "TasksTable"
+          TASK_TABLE: "TasksTable"   # ✅ Reference the actual table
+          OUTPUT_BUCKET: !Ref OutputBucket
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: TasksTable
+          TableName: "TasksTable"  # ✅ Reference the table
         - SQSSendMessagePolicy:
-            QueueName: TaskQueue
+          QueueName: !Ref TaskQueue   # ✅ Reference the queue
+        - S3WritePolicy:
+          BucketName: !Ref OutputBucket
+      Events:                          # ✅ Add API Gateway trigger
+        ApiEvent:
+          Type: Api
+          Properties:
+          Path: /tasks
+          Method: post
+      DeadLetterQueue:                 # ✅ Add DLQ for failed invocations
+        Type: SQS
+        TargetArn: !GetAtt ApiDLQ.Arn
+
 
   # --------------------------------------
   #  WORKER LAMBDA FUNCTION
@@ -63,28 +102,39 @@ Resources:
   WorkerLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: WorkerLambdaFunction
+      FunctionName: !Sub "${AWS::StackName}-WorkerLambdaFunction"
       Handler: com.art.batch.controller.WorkerLambdaHandler::handleRequest
+      Runtime: java17                    # ✅ Added required runtime
       CodeUri: .
+      Timeout: 300                       # ✅ 5 minutes for processing tasks
+      MemorySize: 1024                   # ✅ More memory for worker tasks
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref OutputBucket
-          TASK_TABLE: "TasksTable"
+          TASK_TABLE: "TasksTable"    # ✅ Reference the actual table
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: TasksTable
-        - Statement:
+          - DynamoDBCrudPolicy:
+            TableName: "TasksTable"   # ✅ Reference the table
+          - Statement:
             - Effect: Allow
               Action:
                 - s3:PutObject
+                - s3:PutObjectAcl        # ✅ Might need this too
               Resource: !Sub "arn:aws:s3:::${OutputBucket}/*"
-
       Events:
         TaskQueueEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt TaskQueue.Arn
-            BatchSize: 1
+            BatchSize: 1                 # ✅ Good for individual processing
+            MaximumBatchingWindowInSeconds: 5  # ✅ Optional: reduce latency
+            FunctionResponseTypes:
+				- ReportBatchItemFailures
+      ReservedConcurrencyLimit: 10
+	  DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt WorkerDLQ.Arn
+
 
 Outputs:
   ApiLambdaArn:
@@ -102,3 +152,19 @@ Outputs:
   QueueArn:
     Value: !GetAtt TaskQueue.Arn
     Description: SQS queue ARN
+	
+  OutputBucketName:
+    Value: !Ref OutputBucket
+    Description: Name of the S3 output bucket
+    Export:
+      Name: !Sub "${AWS::StackName}-OutputBucket"
+
+  TaskTableName:
+    Value: "TasksTable"
+    Description: Name of the DynamoDB tasks table
+	
+  ApiEndpoint:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Description: API Gateway endpoint URL
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiEndpoint"

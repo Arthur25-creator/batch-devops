@@ -192,7 +192,7 @@ Resources:
                 TemplatePath: BuildOutput::packaged-template.yaml
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
                 StackName: JavaSAMApp
-                Capabilities: CAPABILITY_IAM
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
                 
 
 Outputs:
