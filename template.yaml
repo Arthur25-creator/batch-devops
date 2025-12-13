@@ -89,8 +89,8 @@ Resources:
         ApiEvent:
           Type: Api
           Properties:
-          Path: /tasks
-          Method: post
+            Path: /tasks
+            Method: post
       DeadLetterQueue:                 # ✅ Add DLQ for failed invocations
         Type: SQS
         TargetArn: !GetAtt ApiDLQ.Arn
@@ -115,12 +115,9 @@ Resources:
       Policies:
           - DynamoDBCrudPolicy:
             TableName: "TasksTable"   # ✅ Reference the table
-          - Statement:
-            - Effect: Allow
-              Action:
-                - s3:PutObject
-                - s3:PutObjectAcl        # ✅ Might need this too
-              Resource: !Sub "arn:aws:s3:::${OutputBucket}/*"
+          - S3WritePolicy:
+            BucketName: !Ref OutputBucket
+
       Events:
         TaskQueueEvent:
           Type: SQS
