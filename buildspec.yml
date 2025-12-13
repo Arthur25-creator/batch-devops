@@ -3,23 +3,25 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      java: corretto17
+      python: 3.9
+  pre_build:
     commands:
-      - echo Installing Maven...
-      - mvn -version
-
+      - echo "Installing SAM CLI"
+      - pip install aws-sam-cli
   build:
     commands:
-      - echo "Building Java project..."
-      - echo "Building SAM package..."
-      - sam build --use-container
-      - cp .aws-sam/build/template.yaml template.yaml
+      - echo "Build started on `date`"
+      - echo "Building SAM application"
+      - sam build
+      - echo "Packaging SAM application"
+      - sam package --s3-bucket $ARTIFACTS_BUCKET --output-template-file packaged-template.yaml
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
 
 artifacts:
   files:
-    - template.yaml
+    - packaged-template.yaml  # Changed from template.yaml
 
-cache:
-  paths:
-    - ~/.m2/**/* 
+
 

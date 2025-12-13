@@ -186,7 +186,7 @@ Resources:
                 - Name: BuildOutput
               Configuration:
                 ActionMode: CREATE_UPDATE
-                TemplatePath: BuildOutput::template.yaml
+                TemplatePath: BuildOutput::packaged-template.yaml
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
                 StackName: JavaSAMApp
                 Capabilities: CAPABILITY_IAM
