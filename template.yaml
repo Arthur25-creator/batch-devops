@@ -11,11 +11,22 @@ Globals:
       - x86_64
 
 Parameters:
-  OutputBucketName:
-    Type: String
-    Description: Name of the existing S3 bucket for output files
+#  OutputBucketName:
+#    Type: String
+#    Description: Name of the existing S3 bucket for output files
 
 Resources:
+	
+  OutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-output-bucket-${AWS::AccountId}"
+      # Add any other bucket configuration you need
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
   # --------------------------------------
   #  SQS QUEUE
@@ -55,7 +66,7 @@ Resources:
       CodeUri: .
       Environment:
         Variables:
-          S3_BUCKET_NAME: !Ref OutputBucketName
+          S3_BUCKET_NAME: !Ref OutputBucket
           TASK_TABLE: "TasksTable"
       Policies:
         - DynamoDBCrudPolicy:
@@ -64,7 +75,7 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:PutObject
-              Resource: !Sub "arn:aws:s3:::${OutputBucketName}/*"
+              Resource: !Sub "arn:aws:s3:::${OutputBucket}/*"
 
       Events:
         TaskQueueEvent:
