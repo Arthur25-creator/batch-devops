@@ -80,11 +80,11 @@ Resources:
           OUTPUT_BUCKET: !Ref OutputBucket
       Policies:
         - DynamoDBCrudPolicy:
-          TableName: "TasksTable"  # ✅ Reference the table
+            TableName: "TasksTable"  # ✅ Reference the table
         - SQSSendMessagePolicy:
-          QueueName: !Ref TaskQueue   # ✅ Reference the queue
+            QueueName: !GetAtt TaskQueue.QueueName   # ✅ Get the actual queue name
         - S3WritePolicy:
-          BucketName: !Ref OutputBucket
+            BucketName: !Ref OutputBucket
       Events:                          # ✅ Add API Gateway trigger
         ApiEvent:
           Type: Api
@@ -113,10 +113,10 @@ Resources:
           S3_BUCKET_NAME: !Ref OutputBucket
           TASK_TABLE: "TasksTable"    # ✅ Reference the actual table
       Policies:
-          - DynamoDBCrudPolicy:
-            TableName: "TasksTable"   # ✅ Reference the table
-          - S3WritePolicy:
-            BucketName: !Ref OutputBucket
+        - DynamoDBCrudPolicy:
+          TableName: "TasksTable"   # ✅ Reference the table
+        - S3WritePolicy:
+          BucketName: !Ref OutputBucket
 
       Events:
         TaskQueueEvent:
