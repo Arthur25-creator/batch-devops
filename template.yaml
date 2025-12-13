@@ -16,7 +16,7 @@ Parameters:
 #    Description: Name of the existing S3 bucket for output files
 
 Resources:
-	
+
   OutputBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
