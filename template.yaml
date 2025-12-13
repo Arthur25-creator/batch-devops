@@ -37,7 +37,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub "${AWS::StackName}-TaskQueue"  # Make it unique like your bucket
-      VisibilityTimeoutSeconds: 300                  # Adjust based on processing time
+      VisibilityTimeout: 300                  # Adjust based on processing time
       MessageRetentionPeriod: 1209600               # 14 days (default)
       RedrivePolicy:                                # Dead letter queue for failed messages
         deadLetterTargetArn: !GetAtt TaskDLQ.Arn
