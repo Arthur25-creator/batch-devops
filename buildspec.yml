@@ -13,10 +13,11 @@ phases:
       - echo "Building Java project..."
       - echo "Building SAM package..."
       - sam build --use-container
+      - cp .aws-sam/build/template.yaml template.yaml
 
 artifacts:
   files:
-    - .aws-sam/build/**/*
+    - template.yaml
 
 cache:
   paths:
