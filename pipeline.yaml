@@ -110,6 +110,7 @@ Resources:
                   - 'logs:*'
                   - 'events:*'
                   - 'cloudformation:*'
+                  - 'sqs:*'
                 Resource: '*'
 
   ArtifactBucket:
