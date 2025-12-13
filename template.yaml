@@ -79,12 +79,24 @@ Resources:
           TASK_TABLE: "TasksTable"   # ✅ Reference the actual table
           OUTPUT_BUCKET: !Ref OutputBucket
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: "TasksTable"  # ✅ Reference the table
-        - SQSSendMessagePolicy:
-            QueueName: !GetAtt TaskQueue.QueueName   # ✅ Get the actual queue name
-        - S3WritePolicy:
-            BucketName: !Ref OutputBucket
+        - Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/TasksTable"
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt TaskQueue.Arn
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !Sub "${OutputBucket}/*"
       Events:                          # ✅ Add API Gateway trigger
         ApiEvent:
           Type: Api
@@ -113,10 +125,20 @@ Resources:
           S3_BUCKET_NAME: !Ref OutputBucket
           TASK_TABLE: "TasksTable"    # ✅ Reference the actual table
       Policies:
-        - DynamoDBCrudPolicy:
-          TableName: "TasksTable"   # ✅ Reference the table
-        - S3WritePolicy:
-          BucketName: !Ref OutputBucket
+        - Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/TasksTable"
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !Sub "${OutputBucket}/*"
 
       Events:
         TaskQueueEvent:
