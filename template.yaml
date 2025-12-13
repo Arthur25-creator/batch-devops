@@ -148,7 +148,7 @@ Resources:
           - Effect: Allow
             Action:
               - s3:PutObject
-            Resource: !Sub "${OutputBucket}/*"
+            Resource: !Sub "${OutputBucket.Arn}/*"
 
       Events:
         TaskQueueEvent:
