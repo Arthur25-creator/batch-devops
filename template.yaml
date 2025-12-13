@@ -44,9 +44,19 @@ Resources:
         maxReceiveCount: 3
 
   TaskDLQ:  # Dead Letter Queue for failed messages
-     Type: AWS::SQS::Queue
-     Properties:
-       QueueName: !Sub "${AWS::StackName}-TaskQueue-DLQ"
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-TaskQueue-DLQ"
+
+  ApiDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-ApiDLQ"
+
+  WorkerDLQ: 
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-WorkerDLQ"
 
 #  TasksTable:
 #    Type: AWS::DynamoDB::Table
