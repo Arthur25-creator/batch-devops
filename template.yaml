@@ -22,7 +22,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !Sub "javasam-output-bucket-${AWS::AccountId}-${AWS::Region}"
+      # BucketName: !Sub "javasam-output-bucket-${AWS::AccountId}-${AWS::Region}"
       # Add any other bucket configuration you need
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
