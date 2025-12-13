@@ -10,7 +10,7 @@ Globals:
     Architectures:
       - x86_64
 
-Parameters:
+#Parameters:
 #  OutputBucketName:
 #    Type: String
 #    Description: Name of the existing S3 bucket for output files
