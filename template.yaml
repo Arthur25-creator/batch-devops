@@ -130,7 +130,6 @@ Resources:
             MaximumBatchingWindowInSeconds: 5  # ✅ Optional: reduce latency
             FunctionResponseTypes:
               - ReportBatchItemFailures
-      ReservedConcurrencyLimit: 10
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WorkerDLQ.Arn
