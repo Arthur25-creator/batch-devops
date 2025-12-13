@@ -2,10 +2,11 @@ package com.art.batch.controller;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.art.batch.repository.TaskRepository;
 import com.art.batch.service.BatchService;
 
-public class WorkerLambdaHandler implements RequestHandler<String, String> {
+public class WorkerLambdaHandler implements RequestHandler<SQSEvent, String> {
 
 	private final BatchService batchService;
 	private final TaskRepository taskRepository;
@@ -23,11 +24,13 @@ public class WorkerLambdaHandler implements RequestHandler<String, String> {
 	}
 
 	@Override
-	public String handleRequest(String taskId, Context context) {
-		String outputPath = batchService.processTask(taskId);
+	public String handleRequest(SQSEvent event, Context context) {
+		for (SQSEvent.SQSMessage msg : event.getRecords()) {
+			String taskId = msg.getBody();
 
-		taskRepository.updateStatus(taskId, "DONE", outputPath);
-
-		return "Processed: " + taskId;
+			String outputPath = batchService.processTask(taskId);
+			taskRepository.updateStatus(taskId, "DONE", outputPath);
+		}
+		return null;
 	}
 }

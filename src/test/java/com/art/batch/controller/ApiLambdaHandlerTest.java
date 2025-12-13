@@ -1,5 +1,6 @@
 package com.art.batch.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -8,11 +9,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.art.batch.model.TaskRecord;
 import com.art.batch.repository.TaskRepository;
 
@@ -34,28 +35,27 @@ public class ApiLambdaHandlerTest {
 		DynamoDbEnhancedClient mockEnhanced = mock(DynamoDbEnhancedClient.class);
 		DynamoDbTable<TaskRecord> mockTable = mock(DynamoDbTable.class);
 
-		// When .table(...) is called, return the mocked table
 		when(mockEnhanced.table(anyString(), any(TableSchema.class))).thenReturn(mockTable);
 
-		// Pass the mocked enhanced client
 		TaskRepository repo = new TaskRepository(mockEnhanced);
 
-		// Create handler
 		ApiLambdaHandler handler = new ApiLambdaHandler(mockSqs, repo, "dummyQueueUrl");
 
-		// Create fake event
-		Map<String, String> event = new HashMap<>();
-		event.put("data", "Hello World");
+		// 🔥 REALISTIC API Gateway event
+		APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent().withHttpMethod("POST")
+				.withBody("{\"data\":\"Hello World\"}");
 
 		// Run handler
-		String taskId = handler.handleRequest(event, null);
+		APIGatewayProxyResponseEvent response = handler.handleRequest(event, mock(Context.class));
 
-		// VERIFY: repo.createTask() internally calls table.putItem(...)
+		// VERIFY DynamoDB write
 		verify(mockTable, times(1)).putItem(any(TaskRecord.class));
 
-		// VERIFY: SQS sendMessage was called
+		// VERIFY SQS send
 		verify(mockSqs, times(1)).sendMessage(any(SendMessageRequest.class));
 
-		assertNotNull(taskId);
+		// VERIFY response
+		assertEquals(200, response.getStatusCode());
+		assertNotNull(response.getBody()); // taskId
 	}
 }

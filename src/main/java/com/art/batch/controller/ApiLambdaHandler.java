@@ -1,17 +1,18 @@
 package com.art.batch.controller;
 
-import java.util.Map;
 import java.util.UUID;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.art.batch.model.TaskRecord;
 import com.art.batch.repository.TaskRepository;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-public class ApiLambdaHandler implements RequestHandler<Map<String, String>, String> {
+public class ApiLambdaHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
 	private final SqsClient sqs;
 	private final TaskRepository taskRepository;
@@ -32,13 +33,15 @@ public class ApiLambdaHandler implements RequestHandler<Map<String, String>, Str
 	}
 
 	@Override
-	public String handleRequest(Map<String, String> event, Context context) {
-		String input = event.get("data");
+	public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
+
+		String body = event.getBody(); // JSON STRING
+		// parse body JSON here (Jackson/Gson)
 		String taskId = UUID.randomUUID().toString();
 
 		TaskRecord task = new TaskRecord();
 		task.setTaskId(taskId);
-		task.setInput(input);
+		task.setInput(body);
 		task.setStatus("QUEUED");
 		task.setCreatedAt(System.currentTimeMillis());
 
@@ -46,6 +49,6 @@ public class ApiLambdaHandler implements RequestHandler<Map<String, String>, Str
 
 		sqs.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(taskId).build());
 
-		return taskId;
+		return new APIGatewayProxyResponseEvent().withStatusCode(200).withBody(taskId);
 	}
 }
