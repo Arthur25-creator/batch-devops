@@ -47,7 +47,7 @@ Resources:
      Type: AWS::SQS::Queue
      Properties:
        QueueName: !Sub "${AWS::StackName}-TaskQueue-DLQ"
-	   
+
 #  TasksTable:
 #    Type: AWS::DynamoDB::Table
 #    Properties:
@@ -152,7 +152,7 @@ Outputs:
   QueueArn:
     Value: !GetAtt TaskQueue.Arn
     Description: SQS queue ARN
-	
+
   OutputBucketName:
     Value: !Ref OutputBucket
     Description: Name of the S3 output bucket
@@ -162,7 +162,7 @@ Outputs:
   TaskTableName:
     Value: "TasksTable"
     Description: Name of the DynamoDB tasks table
-	
+
   ApiEndpoint:
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
     Description: API Gateway endpoint URL
